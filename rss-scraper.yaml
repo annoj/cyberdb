@@ -1,0 +1,19 @@
+wait_interval: 60
+db_path: ./rss-scraper-db.sqlite3
+urls:
+    - https://www.tagesschau.de/infoservices/alle-meldungen-100~rss2.xml
+    - https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
+    - https://feeds.feedburner.com/TheHackersNews
+    - https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Presse_Veranstaltungen.xml
+    - https://wid.cert-bund.de/content/public/securityAdvisory/rss
+    - https://wid.cert-bund.de/content/public/buergercert/rss
+    - https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Produktzertifizierung.xml
+    - https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/ACS_RSSNewsfeed.xml
+    - https://www.service.bund.de/Content/DE/Stellen/Suche/Formular.html?nn=4642046&type=0&resultsPerPage=100&templateQueryString=Bundesamt+f%C3%BCr+Sicherheit+in+der+Informationstechnik&sortOrder=dateOfIssue_dt+desc&city_zipcode=53175+Bonn&jobsrss=true
+    - https://www.service.bund.de/Content/DE/Ausschreibungen/Suche/Formular.html?nn=4641482&sortOrder=dateOfIssue_dt+desc&type=0&resultsPerPage=100&templateQueryString=Bundesamt+f%C3%BCr+Sicherheit+in+der+Informationstechnik&jobsrss=true
+    - https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_Podcast_Update_verfuegbar.xml
+    - https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed_CSW.xml
+patterns:
+    - (?i)cyber
+    - (?i)it-security
+    - (?i)data[ -_]*breach
