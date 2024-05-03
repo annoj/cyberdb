@@ -3,7 +3,8 @@ import asyncio
 import sys
 import yaml
 
-from rssscraper.rssscraper import SqlLiteDB, RssScraper
+from rssscraper.rssscraper import RssScraper
+from rssscraper.db import SqlLiteDB
 
 RSS_SCRAPER_CONFIG_FILE_DEFAULT = './db.sqlite3'
 RSS_SCRAPER_WAIT_INTERVAL_DEFAULT = 60
