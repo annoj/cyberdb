@@ -1,11 +1,21 @@
+import asyncio
 import sqlite3
 
 from abc import ABC, abstractmethod
 
 
 class DB(ABC):
+    # @property
     @abstractmethod
-    def commit_rss_item_and_matches(item, matches):
+    def result_queue():
+        ...
+
+    @abstractmethod
+    def start_listen_for_results():
+        ...
+
+    @abstractmethod
+    def stop_listen_for_results():
         ...
 
 
@@ -13,7 +23,14 @@ class MockDB(DB):
     def __init__(self):
         pass
 
-    def commit_rss_item_and_matches(self, item, matches):
+    @property
+    def result_queue(self):
+        pass
+
+    def start_listen_for_results(self):
+        pass
+
+    def stop_listen_for_results(self):
         pass
 
 
@@ -25,6 +42,7 @@ class SqlLiteDB(DB):
         self.__create_pattern_table_if_not_exists()
         self.__create_matches_table_if_not_exists()
         self.__create_evidences_table_if_not_exists()
+        self.__result_queue = asyncio.Queue()
 
     def __del__(self):
         self.__connection.commit()
@@ -83,7 +101,7 @@ class SqlLiteDB(DB):
         self.__connection.execute(query)
         self.__connection.commit()
 
-    def commit_rss_item_and_matches(self, item, matches):
+    def __commit_rss_item_and_matches(self, item, matches):
         insert_rss_item_if_not_exists_query = '''
             INSERT OR IGNORE INTO rss_items
             VALUES (
@@ -157,3 +175,20 @@ class SqlLiteDB(DB):
             )
 
         self.__connection.commit()
+
+    @property
+    def result_queue(self):
+        return self.__result_queue
+
+    async def start_listen_for_results(self):
+        while True:
+            try:
+                rss_item_result = await self.__result_queue.get()
+                self.__commit_rss_item_and_matches(**rss_item_result)
+            except asyncio.CancelledError:
+                break
+            finally:
+                self.__result_queue.task_done()
+
+    async def stop_listen_for_results(self):
+        pass

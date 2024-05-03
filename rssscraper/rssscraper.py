@@ -7,8 +7,6 @@ import requests_xml
 from dataclasses import dataclass
 from typing import List
 
-from .db import DB
-
 
 @dataclass
 class RssItem():
@@ -32,14 +30,16 @@ class RssScraper():
         pattern: str
         matches: List[str]
 
-    def __init__(self, url: str, db: DB, patterns=[], wait_interval=10):
+    def __init__(self, url: str, result_queue, patterns=[], wait_interval=10):
         self.__url = url
-        self.__db = db
+        self.__result_queue = result_queue
         self.__patterns = patterns
         self.__wait = wait_interval
         self.__running = False
         self.__xml_session = requests_xml.XMLSession()
         self.__processed_rss_item_sha256s = set()
+
+        # print(f'RssScraper {self.__url=} {self.__result_queue=}')
 
     def __del__(self):
         self.__running = False
@@ -93,13 +93,9 @@ class RssScraper():
             (parsed_item.get('source', {}).get('$')) or None,
         )
 
-        # Commit RssItem to db
-        # try:
-        #     self.__db.commit_rss_item(rss_item, pattern_matches)
-        # except Exception:
-        #     # TODO: Properly handle failure to commit item to db
-        #     raise Exception
-        self.__db.commit_rss_item_and_matches(rss_item, pattern_matches)
+        self.__result_queue.put_nowait(
+            {'item': rss_item, 'matches': pattern_matches}
+        )
 
     async def run(self):
         self.__running = True

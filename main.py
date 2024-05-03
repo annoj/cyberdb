@@ -34,17 +34,26 @@ async def main():
     patterns = config.get('patterns') or []
 
     sqlite_db = SqlLiteDB(db_path)
+    sqlite_db_task = asyncio.create_task(sqlite_db.start_listen_for_results())
+
     rss_scraper_tasks = set()
 
     for url in rss_urls:
-        rss_scraper = RssScraper(url, sqlite_db, wait_interval=wait)
+        rss_scraper = RssScraper(
+            url, sqlite_db.result_queue, wait_interval=wait)
+
         for pattern in patterns:
             rss_scraper.add_pattern(pattern)
+
         task = asyncio.create_task(rss_scraper.run())
         rss_scraper_tasks.add(task)
 
     for task in rss_scraper_tasks:
         await task
+
+    sqlite_db.result_queue.close()
+    await sqlite_db.result_queue.join()
+    sqlite_db_task.cancel()
 
 
 if __name__ == '__main__':
