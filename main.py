@@ -18,8 +18,9 @@ def parse_args():
     return parser.parse_args()
 
 
-async def main():
+def main():
     args = parse_args()
+
     config_path = args.config_file or RSS_SCRAPER_CONFIG_FILE_DEFAULT
     try:
         with open(config_path) as f:
@@ -33,28 +34,31 @@ async def main():
     rss_urls = config.get('urls') or []
     patterns = config.get('patterns') or []
 
+    loop = asyncio.new_event_loop()
+
     sqlite_db = SqlLiteDB(db_path)
-    sqlite_db_task = asyncio.create_task(sqlite_db.start_listen_for_results())
+    sqlite_db_task = loop.create_task(sqlite_db.start_listen_for_results())
 
-    rss_scraper_tasks = set()
-
+    scraper_tasks = []
     for url in rss_urls:
-        rss_scraper = RssScraper(
-            url, sqlite_db.result_queue, wait_interval=wait)
-
+        scraper = RssScraper(url, sqlite_db.result_queue, wait_interval=wait)
         for pattern in patterns:
-            rss_scraper.add_pattern(pattern)
+            scraper.add_pattern(pattern)
+        scraper_tasks.append(loop.create_task(scraper.run()))
 
-        task = asyncio.create_task(rss_scraper.run())
-        rss_scraper_tasks.add(task)
-
-    for task in rss_scraper_tasks:
-        await task
-
-    sqlite_db.result_queue.close()
-    await sqlite_db.result_queue.join()
-    sqlite_db_task.cancel()
+    try:
+        asyncio.set_event_loop(loop)
+        loop.run_forever()
+    except KeyboardInterrupt:
+        print('Received SIGING, shutting down gracefully')
+    finally:
+        for task in scraper_tasks:
+            task.cancel()
+        sqlite_db_task.cancel()
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
+        asyncio.set_event_loop(None)
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()

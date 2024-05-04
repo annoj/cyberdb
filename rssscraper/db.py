@@ -43,6 +43,7 @@ class SqlLiteDB(DB):
         self.__create_matches_table_if_not_exists()
         self.__create_evidences_table_if_not_exists()
         self.__result_queue = asyncio.Queue()
+        self.__is_cancelled = False
 
     def __del__(self):
         self.__connection.commit()
@@ -181,14 +182,13 @@ class SqlLiteDB(DB):
         return self.__result_queue
 
     async def start_listen_for_results(self):
-        while True:
+        while not (self.__is_cancelled and self.__result_queue.empty()):
             try:
                 rss_item_result = await self.__result_queue.get()
                 self.__commit_rss_item_and_matches(**rss_item_result)
-            except asyncio.CancelledError:
-                break
-            finally:
                 self.__result_queue.task_done()
+            except asyncio.CancelledError:
+                self.__is_cancelled = True
 
     async def stop_listen_for_results(self):
         pass
